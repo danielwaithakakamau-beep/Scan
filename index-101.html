@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0f7a4a">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Scan Pro">
+<title>Scan Pro – PDF, QR & Barcode Scanner</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.min.js"></script>
+<style>
+:root{--bg:#f5f7f6;--card:#fff;--ink:#14231c;--mute:#5d6f66;--acc:#0f7a4a;--accink:#fff;--line:#dde5e0;--danger:#c0392b;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0e1612;--card:#17221c;--ink:#e8f1ec;--mute:#93a79c;--acc:#35c98a;--accink:#062315;--line:#26352d}}
+:root[data-theme="dark"]{--bg:#0e1612;--card:#17221c;--ink:#e8f1ec;--mute:#93a79c;--acc:#35c98a;--accink:#062315;--line:#26352d}
+*{box-sizing:border-box}html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;max-width:640px;margin:auto}
+header{padding:16px 16px 8px}h1{margin:0;font-size:1.3rem}header p{margin:2px 0 0;color:var(--mute);font-size:.85rem}
+nav{display:flex;gap:6px;padding:8px 16px;position:sticky;top:env(safe-area-inset-top,0px);background:var(--bg);z-index:5}
+nav button{flex:1;padding:12px;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:12px;font-weight:600;font-size:.95rem}
+nav button.on{background:var(--acc);color:var(--accink);border-color:var(--acc)}
+main{padding:8px 16px 40px}.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:12px}
+.btn{display:inline-block;padding:12px 16px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--ink);font-weight:600;font-size:.95rem;cursor:pointer;text-align:center}
+.btn.p{background:var(--acc);color:var(--accink);border-color:var(--acc)}.btn.d{color:var(--danger)}.btn:disabled{opacity:.45}
+.row{display:flex;gap:8px;flex-wrap:wrap}.row>*{flex:1;min-width:120px}
+input[type=text]{width:100%;padding:12px;border-radius:12px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font-size:1rem}
+.pages{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px}
+.pg{position:relative;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--bg)}
+.pg img{width:100%;aspect-ratio:3/4;object-fit:cover;display:block}
+.pg .n{position:absolute;top:6px;left:6px;background:var(--acc);color:var(--accink);border-radius:8px;padding:1px 8px;font-size:.8rem;font-weight:700}
+.pg .a{display:flex}.pg .a button{flex:1;border:0;border-top:1px solid var(--line);background:var(--card);color:var(--ink);padding:8px 0;font-size:1rem}
+.empty{color:var(--mute);text-align:center;padding:24px 8px}
+.vid{position:relative;border-radius:16px;overflow:hidden;background:#000;aspect-ratio:1/1}
+.vid video{width:100%;height:100%;object-fit:cover}
+.vid .box{position:absolute;inset:24% 8%;border:3px solid var(--acc);border-radius:16px;box-shadow:0 0 0 999px rgba(0,0,0,.35)}
+.res{word-break:break-all;background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:12px;margin:8px 0}
+.h{display:flex;gap:8px;align-items:center;justify-content:space-between;padding:10px 0;border-top:1px solid var(--line)}
+.h span{word-break:break-all;font-size:.9rem}.mute{color:var(--mute);font-size:.85rem}
+label.tog{display:flex;align-items:center;gap:8px;margin:10px 0;font-size:.95rem}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:20px;font-size:.9rem;opacity:0;transition:.25s;pointer-events:none}
+.toast.s{opacity:1}[hidden]{display:none!important}
+
+#ed{position:fixed;inset:0;background:var(--bg);z-index:50;display:flex;flex-direction:column;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);overscroll-behavior:contain}
+body.lock{overflow:hidden}
+.eb{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;gap:8px}
+.ea{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;padding:8px;overflow:hidden;background:rgba(0,0,0,.18)}
+#ew{position:relative;display:inline-block;line-height:0;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.3)}
+#ecv{display:block;background:#fff;touch-action:none;max-width:calc(100vw - 16px);max-height:calc(100vh - 250px);max-height:calc(100dvh - 250px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px))}
+#hcv{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;opacity:.4}
+#crp{position:absolute;border:2px dashed #fff;box-shadow:0 0 0 999px rgba(0,0,0,.5);pointer-events:none}
+.eo{padding:8px 12px;background:var(--card);border-top:1px solid var(--line);min-height:56px;display:flex;align-items:center}
+#cols2{display:flex;gap:12px;align-items:center;width:100%}.cl{display:flex;gap:10px;align-items:center;flex:1;flex-wrap:wrap}
+.sw{width:30px;height:30px;border-radius:50%;border:2px solid var(--line);padding:0}.sw.on{outline:3px solid var(--acc);outline-offset:2px}
+#szr{width:110px}#cbar{display:flex;gap:10px;align-items:center;width:100%}#cbar span{flex:1}
+.et{display:flex;background:var(--card)}
+.et button{flex:1;padding:8px 2px;border:0;border-top:1px solid var(--line);background:var(--card);color:var(--ink);font-size:1.2rem}
+.et button small{display:block;font-size:.7rem;line-height:1.2}.et button.on{background:var(--acc);color:var(--accink)}
+</style>
+</head>
+<body>
+<header style="display:flex;justify-content:space-between;align-items:center;gap:8px"><div><h1>Scan Pro</h1><p>PDF scanner, QR &amp; barcode reader</p></div><button class="btn p" id="inst" hidden style="padding:8px 14px">Install</button></header>
+<nav><button id="t1" class="on">📄 PDF Scanner</button><button id="t2">🔳 QR &amp; Barcode</button></nav>
+<main>
+<section id="v1">
+  <div class="card">
+    <div class="row">
+      <label class="btn p">📷 Take photo<input id="cam" type="file" accept="image/*" capture="environment" hidden></label>
+      <label class="btn">🖼 From gallery<input id="gal" type="file" accept="image/*" multiple hidden></label>
+    </div>
+    <label class="tog"><input type="checkbox" id="enh" checked> Enhance (clean black &amp; white document look)</label>
+    <input type="text" id="fname" placeholder="PDF file name (e.g. Fee-Circular)">
+    <div class="row" style="margin-top:10px">
+      <button class="btn p" id="mk" disabled>⬇ Create PDF</button>
+      <button class="btn d" id="clr" disabled>Clear all</button>
+    </div>
+  </div>
+  <div class="card"><div id="pages" class="pages"></div><div id="pe" class="empty">No pages yet. Take a photo or pick images to start.</div></div>
+</section>
+<section id="v2" hidden>
+  <div class="card">
+    <div class="vid" id="vid" hidden><video id="video" playsinline muted></video><div class="box"></div></div>
+    <div id="camerr" class="mute" hidden></div>
+    <div id="stat" class="mute" style="margin-top:8px"></div>
+    <div id="eng" class="mute" style="margin-top:8px"></div>
+    <div class="row" style="margin-top:10px">
+      <button class="btn p" id="go">▶ Start camera</button>
+      <button class="btn" id="tl" hidden>🔦 Light</button>
+      <label class="btn">🖼 Scan from image<input id="qimg" type="file" accept="image/*" hidden></label>
+    </div>
+  </div>
+  <div class="card" id="rc" hidden>
+    <b>Result</b><div class="res" id="rt"></div><div class="mute" id="rf" style="margin-bottom:8px"></div>
+    <div class="row"><button class="btn" id="cp">Copy</button><button class="btn p" id="op" hidden>Open link</button><button class="btn p" id="sr" hidden>Search web</button></div>
+  </div>
+  <div class="card"><div class="row" style="justify-content:space-between;align-items:center;flex-wrap:nowrap"><b>History</b><button class="btn d" id="ch" style="flex:0 0 auto;min-width:0;padding:6px 12px">Clear</button></div><div id="hist"></div></div>
+</section>
+</main>
+<div id="ed" hidden>
+  <div class="eb"><button class="btn" id="ec">Cancel</button><b>Edit page</b><button class="btn p" id="edn">Done</button></div>
+  <div class="ea"><div id="ew"><canvas id="ecv"></canvas><canvas id="hcv"></canvas><div id="crp" hidden></div></div></div>
+  <div class="eo">
+    <div id="cols2"><div id="cols" class="cl"></div><input type="range" id="szr" min="1" max="20" value="4" aria-label="Size"></div>
+    <div id="cbar" hidden><span class="mute">Drag on the page to choose the area</span><button class="btn p" id="capply">Apply crop</button></div>
+  </div>
+  <div class="et">
+    <button data-t="crop">✂️<small>Crop</small></button><button data-t="draw" class="on">✏️<small>Draw</small></button><button data-t="hl">🖍️<small>Highlight</small></button><button data-t="text">🔤<small>Text</small></button><button id="rot">↻<small>Rotate</small></button><button id="und">↶<small>Undo</small></button>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+const $=id=>document.getElementById(id);
+let pages=[],stream=null,raf=null,lastVal="";
+function toast(m){const t=$('toast');t.textContent=m;t.classList.add('s');setTimeout(()=>t.classList.remove('s'),1800)}
+/* tabs */
+function tab(n){$('v1').hidden=n!=1;$('v2').hidden=n!=2;$('t1').classList.toggle('on',n==1);$('t2').classList.toggle('on',n==2);if(n==1)stop()}
+$('t1').onclick=()=>tab(1);$('t2').onclick=()=>tab(2);
+/* PDF scanner */
+function load(file){return new Promise((ok,no)=>{const u=URL.createObjectURL(file),i=new Image();i.onload=()=>{URL.revokeObjectURL(u);ok(i)};i.onerror=no;i.src=u})}
+async function proc(file){
+  const img=await load(file),M=1700,s=Math.min(1,M/Math.max(img.width,img.height));
+  const c=document.createElement('canvas');c.width=Math.round(img.width*s);c.height=Math.round(img.height*s);
+  const x=c.getContext('2d');x.drawImage(img,0,0,c.width,c.height);
+  if($('enh').checked){
+    const d=x.getImageData(0,0,c.width,c.height),p=d.data;let lo=255,hi=0;
+    for(let i=0;i<p.length;i+=4){const g=.299*p[i]+.587*p[i+1]+.114*p[i+2];p[i]=g;if(g<lo)lo=g;if(g>hi)hi=g}
+    const lo2=lo+(hi-lo)*.12,hi2=hi-(hi-lo)*.12,r=Math.max(1,hi2-lo2);
+    for(let i=0;i<p.length;i+=4){let v=(p[i]-lo2)/r*255;v=v<0?0:v>255?255:v;p[i]=p[i+1]=p[i+2]=v}
+    x.putImageData(d,0,0);
+  }
+  return {url:c.toDataURL('image/jpeg',.85),w:c.width,h:c.height};
+}
+async function add(files){
+  for(const f of files){try{pages.push(await proc(f))}catch(e){toast('Could not read an image')}}
+  draw()
+}
+$('cam').onchange=async e=>{await add(e.target.files);e.target.value=''};
+$('gal').onchange=async e=>{await add([...e.target.files]);e.target.value=''};
+function draw(){
+  const g=$('pages');g.innerHTML='';
+  pages.forEach((p,i)=>{
+    const d=document.createElement('div');d.className='pg';
+    d.innerHTML=`<img src="${p.url}"><span class="n">${i+1}</span><div class="a"><button data-a="e">✏️</button><button data-a="l">◀</button><button data-a="r">▶</button><button data-a="x">🗑</button></div>`;
+    d.querySelectorAll('button').forEach(b=>b.onclick=()=>{
+      const a=b.dataset.a;if(a=='e'){openEd(i);return}
+      if(a=='x')pages.splice(i,1);
+      else if(a=='l'&&i>0)[pages[i-1],pages[i]]=[pages[i],pages[i-1]];
+      else if(a=='r'&&i<pages.length-1)[pages[i+1],pages[i]]=[pages[i],pages[i+1]];
+      draw()});
+    d.querySelector('img').onclick=()=>openEd(i);g.appendChild(d)});
+  $('pe').hidden=pages.length>0;$('mk').disabled=$('clr').disabled=!pages.length;
+}
+$('clr').onclick=()=>{if(confirm('Remove all pages?')){pages=[];draw()}};
+$('mk').onclick=()=>{
+  const {jsPDF}=window.jspdf,doc=new jsPDF({unit:'pt',format:'a4'});
+  const W=doc.internal.pageSize.getWidth(),H=doc.internal.pageSize.getHeight(),m=20;
+  pages.forEach((p,i)=>{
+    if(i)doc.addPage();
+    const s=Math.min((W-2*m)/p.w,(H-2*m)/p.h),w=p.w*s,h=p.h*s;
+    doc.addImage(p.url,'JPEG',(W-w)/2,(H-h)/2,w,h);
+  });
+  let n=($('fname').value.trim()||'scan-'+new Date().toISOString().slice(0,10)).replace(/[^\w\- ]+/g,'');
+  doc.save(n+'.pdf');toast('PDF created');
+};
+/* QR */
+function hist(){try{return JSON.parse(localStorage.getItem('qrh')||'[]')}catch(e){return[]}}
+function saveH(a){try{localStorage.setItem('qrh',JSON.stringify(a.slice(0,30)))}catch(e){}}
+function isUrl(t){return /^https?:\/\//i.test(t)}
+function showRes(t,fmt,noHist){
+  fmt=(fmt||'').toString().replace(/_/g,' ').toUpperCase();
+  $('rc').hidden=false;$('rt').textContent=t;$('rf').textContent=fmt?'Type: '+fmt:'';
+  const u=isUrl(t);$('op').hidden=!u;$('sr').hidden=u;
+  $('op').onclick=()=>window.open(t,'_blank','noopener');
+  $('sr').onclick=()=>window.open('https://www.google.com/search?q='+encodeURIComponent(t),'_blank','noopener');
+  if(!noHist&&t!==lastVal){const h=hist();h.unshift({t,f:fmt,d:new Date().toLocaleString()});saveH(h);renderH()}
+  lastVal=t;if(!noHist&&navigator.vibrate)navigator.vibrate(80);
+}
+function renderH(){
+  const h=hist(),e=$('hist');e.innerHTML='';
+  if(!h.length){e.innerHTML='<div class="empty">No scans yet.</div>';return}
+  h.forEach(x=>{const r=document.createElement('div');r.className='h';
+    r.innerHTML='<div><span></span><div class="mute"></div></div><button class="btn" style="flex:0 0 auto;min-width:0;padding:6px 12px">View</button>';
+    r.querySelector('span').textContent=x.t;r.querySelector('.mute').textContent=(x.f?x.f+' · ':'')+x.d;
+    r.querySelector('button').onclick=()=>showRes(x.t,x.f,true);
+    e.appendChild(r)})
+}
+$('ch').onclick=()=>{saveH([]);renderH()};
+$('cp').onclick=async()=>{try{await navigator.clipboard.writeText($('rt').textContent);toast('Copied')}catch(e){toast('Copy not allowed here')}};
+let BD=null;
+function setEng(){$('eng').textContent=BD?'Scanner: native (Google) – QR codes and barcodes':'Scanner: built-in – QR codes and common barcodes'}
+(async()=>{try{if('BarcodeDetector' in window){const sup=await BarcodeDetector.getSupportedFormats();
+ const f=['qr_code','ean_13','ean_8','upc_a','upc_e','code_128','code_39','code_93','codabar','itf','data_matrix','pdf417','aztec'].filter(x=>sup.includes(x));
+ BD=new BarcodeDetector(f.length?{formats:f}:undefined)}}catch(e){BD=null}
+ setEng();if(!BD)loadZX()})();
+let zxP=null,fr=0;
+function loadZX(){if(window.ZXing)return Promise.resolve(true);if(!zxP)zxP=new Promise(ok=>{const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js';s.onload=()=>ok(!!window.ZXing);s.onerror=()=>ok(false);document.head.appendChild(s)});return zxP}
+function zxDecode(c){
+  try{const Z=window.ZXing;if(!Z)return null;
+    const h=new Map();h.set(Z.DecodeHintType.TRY_HARDER,true);
+    const rd=new Z.MultiFormatReader();rd.setHints(h);
+    const r=rd.decode(new Z.BinaryBitmap(new Z.HybridBinarizer(new Z.HTMLCanvasElementLuminanceSource(c))));
+    return {t:r.getText(),f:Z.BarcodeFormat[r.getBarcodeFormat()]}
+  }catch(e){return null}
+}
+const cv=document.createElement('canvas'),cx=cv.getContext('2d',{willReadFrequently:true});
+async function tick(){
+  if(!stream)return;
+  const v=$('video');
+  if(v.readyState===v.HAVE_ENOUGH_DATA&&v.videoWidth){
+    const k=Math.min(1,1000/Math.max(v.videoWidth,v.videoHeight));
+    cv.width=Math.round(v.videoWidth*k);cv.height=Math.round(v.videoHeight*k);cx.drawImage(v,0,0,cv.width,cv.height);
+    let res=null;
+    if(BD){try{const r=await BD.detect(cv);if(r.length&&r[0].rawValue)res={t:r[0].rawValue,f:r[0].format}}catch(e){}}
+    if(!res&&stream){
+      const d=cx.getImageData(0,0,cv.width,cv.height),r=jsQR(d.data,d.width,d.height,{inversionAttempts:'dontInvert'});
+      if(r&&r.data)res={t:r.data,f:'qr_code'};
+      else if(window.ZXing&&(++fr%2===0))res=zxDecode(cv)}
+    if(res){showRes(res.t,res.f);$('stat').textContent='✅ Scanned – point at another code to scan again'}
+  }
+  if(stream)raf=requestAnimationFrame(tick);
+}
+function camErr(m){$('camerr').hidden=false;$('camerr').textContent=m;$('stat').textContent=''}
+async function start(){
+  $('camerr').hidden=true;$('stat').textContent='Starting camera…';
+  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){camErr('Camera is not available in this browser. Use "Scan from image".');return}
+  loadZX();
+  try{
+    try{stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1280},height:{ideal:720}},audio:false})}
+    catch(e){if(e&&e.name==='NotAllowedError')throw e;stream=await navigator.mediaDevices.getUserMedia({video:true,audio:false})}
+    const v=$('video');v.srcObject=stream;await v.play();
+    $('vid').hidden=false;$('go').textContent='■ Stop camera';$('stat').textContent='Point at a QR code or barcode and hold steady';
+    const tr=stream.getVideoTracks()[0],caps=tr.getCapabilities?tr.getCapabilities():{};
+    try{if(caps.focusMode&&caps.focusMode.includes('continuous'))await tr.applyConstraints({advanced:[{focusMode:'continuous'}]})}catch(e){}
+    $('tl').hidden=!caps.torch;
+    raf=requestAnimationFrame(tick);
+  }catch(e){
+    stop();const n=e&&e.name;
+    camErr(n==='NotAllowedError'?'Camera permission is blocked. Open Chrome menu → Settings → Site settings → Camera, allow this site, then try again.':n==='NotFoundError'?'No camera found on this device.':n==='NotReadableError'?'The camera is in use by another app. Close it and try again.':'Camera could not start ('+(n||'error')+'). Use "Scan from image".');
+  }
+}
+function stop(){
+  if(raf)cancelAnimationFrame(raf);raf=null;
+  if(stream){stream.getTracks().forEach(t=>t.stop());stream=null}
+  tor=false;$('tl').hidden=true;$('stat').textContent='';
+  $('vid').hidden=true;$('go').textContent='▶ Start camera';
+}
+let tor=false;
+$('tl').onclick=async()=>{try{tor=!tor;await stream.getVideoTracks()[0].applyConstraints({advanced:[{torch:tor}]})}catch(e){tor=false;toast('Light not available')}};
+$('go').onclick=()=>stream?stop():start();
+function fit(img,M){
+  const s=Math.min(1,M/Math.max(img.width,img.height)),w=Math.round(img.width*s),h=Math.round(img.height*s),pad=Math.round(Math.max(w,h)*.12);
+  cv.width=w+2*pad;cv.height=h+2*pad;cx.fillStyle='#fff';cx.fillRect(0,0,cv.width,cv.height);cx.drawImage(img,pad,pad,w,h);
+}
+async function decodeImg(img){
+  if(BD){try{const r=await BD.detect(img);if(r.length&&r[0].rawValue)return {t:r[0].rawValue,f:r[0].format}}catch(e){}}
+  for(const M of [1200,800,500,350]){
+    fit(img,M);
+    for(const mode of [0,1]){
+      const d=cx.getImageData(0,0,cv.width,cv.height),p=d.data;
+      if(mode){let sum=0,n=p.length/4;for(let i=0;i<p.length;i+=4)sum+=.299*p[i]+.587*p[i+1]+.114*p[i+2];const t=sum/n;
+        for(let i=0;i<p.length;i+=4){const v=(.299*p[i]+.587*p[i+1]+.114*p[i+2])>t?255:0;p[i]=p[i+1]=p[i+2]=v}}
+      const r=jsQR(p,d.width,d.height,{inversionAttempts:'attemptBoth'});
+      if(r&&r.data)return {t:r.data,f:'qr_code'};
+    }
+    await new Promise(r=>setTimeout(r));
+  }
+  if(await loadZX()){
+    for(const M of [1600,1000,700]){fit(img,M);const z=zxDecode(cv);if(z)return z;await new Promise(r=>setTimeout(r))}
+  }
+  return null;
+}
+$('qimg').onchange=async e=>{
+  const f=e.target.files[0];e.target.value='';if(!f)return;
+  toast('Reading image…');
+  try{const r=await decodeImg(await load(f));r?showRes(r.t,r.f):toast('No QR code or barcode found. Try a closer, sharper photo.')}
+  catch(err){toast('Could not read image')}
+};
+setEng();
+renderH();draw();
+/* PAGE EDITOR */
+const ecv=$('ecv'),ex=ecv.getContext('2d',{willReadFrequently:true}),hcv=$('hcv'),hx=hcv.getContext('2d');
+let edI=-1,tool='draw',col='#d00000',sz=4,undo=[],crect=null,cs=null,drawing=false,last=null;
+const COLS=['#000000','#d00000','#0050d0','#0a8a3c','#f5c400','#ffffff'];
+COLS.forEach(c=>{const b=document.createElement('button');b.className='sw';b.style.background=c;b.setAttribute('aria-label','Colour '+c);b.onclick=()=>{col=c;swOn()};$('cols').appendChild(b)});
+function swOn(){[...$('cols').children].forEach((b,i)=>b.classList.toggle('on',COLS[i]===col))}swOn();
+$('szr').oninput=e=>{sz=+e.target.value};
+function syncH(){hcv.width=ecv.width;hcv.height=ecv.height}
+function hideCrop(){crect=null;cs=null;$('crp').hidden=true}
+function setTool(t){
+  tool=t;hideCrop();
+  document.querySelectorAll('.et [data-t]').forEach(b=>b.classList.toggle('on',b.dataset.t===t));
+  $('cols2').hidden=t==='crop';$('cbar').hidden=t!=='crop';
+}
+document.querySelectorAll('.et [data-t]').forEach(b=>b.onclick=()=>setTool(b.dataset.t));
+function snap(){undo.push(ex.getImageData(0,0,ecv.width,ecv.height));if(undo.length>8)undo.shift()}
+function openEd(i){
+  edI=i;const im=new Image();
+  im.onload=()=>{ecv.width=im.width;ecv.height=im.height;ex.drawImage(im,0,0);syncH();undo=[];setTool('draw');document.body.classList.add('lock');$('ed').hidden=false};
+  im.src=pages[i].url;
+}
+function closeEd(){$('ed').hidden=true;document.body.classList.remove('lock');edI=-1;undo=[]}
+$('ec').onclick=()=>{if(undo.length&&!confirm('Discard your edits?'))return;closeEd()};
+$('edn').onclick=()=>{if(edI>=0){pages[edI]={url:ecv.toDataURL('image/jpeg',.9),w:ecv.width,h:ecv.height};draw()}closeEd();toast('Page updated')};
+$('und').onclick=()=>{const d=undo.pop();if(!d){toast('Nothing to undo');return}ecv.width=d.width;ecv.height=d.height;ex.putImageData(d,0,0);syncH();hideCrop()};
+$('rot').onclick=()=>{
+  snap();const t=document.createElement('canvas');t.width=ecv.height;t.height=ecv.width;
+  const c=t.getContext('2d');c.translate(t.width,0);c.rotate(Math.PI/2);c.drawImage(ecv,0,0);
+  ecv.width=t.width;ecv.height=t.height;ex.drawImage(t,0,0);syncH();hideCrop();
+};
+function pt(e){
+  const r=ecv.getBoundingClientRect(),k=ecv.width/r.width;
+  const cx=Math.min(Math.max(e.clientX-r.left,0),r.width),cy=Math.min(Math.max(e.clientY-r.top,0),r.height);
+  return {x:cx*k,y:cy*k,cx,cy,k};
+}
+function seg(a,b){
+  const hl=tool==='hl',c=hl?hx:ex,u=ecv.width/700;
+  c.strokeStyle=col;c.lineCap='round';c.lineJoin='round';c.lineWidth=sz*u*(hl?4:1);
+  c.beginPath();c.moveTo(a.x,a.y);c.lineTo(b.x,b.y);c.stroke();
+}
+function endStroke(){
+  if(!drawing)return;drawing=false;
+  if(tool==='hl'){ex.globalAlpha=.4;ex.drawImage(hcv,0,0);ex.globalAlpha=1;hx.clearRect(0,0,hcv.width,hcv.height)}
+}
+ecv.onpointerdown=e=>{
+  e.preventDefault();const p=pt(e);
+  if(tool==='draw'||tool==='hl'){ecv.setPointerCapture(e.pointerId);snap();drawing=true;last=p;seg(p,p)}
+  else if(tool==='text'){
+    const t=prompt('Type the text to add');
+    if(t&&t.trim()){snap();const u=ecv.width/700,fs=(10+sz*2.5)*u;
+      ex.fillStyle=col;ex.font='600 '+fs+'px system-ui,-apple-system,Roboto,sans-serif';ex.textBaseline='top';
+      t.split('\n').forEach((ln,i)=>ex.fillText(ln,p.x,p.y+i*fs*1.2));}
+  }
+  else if(tool==='crop'){ecv.setPointerCapture(e.pointerId);cs=p;crect=null;$('crp').hidden=true}
+};
+ecv.onpointermove=e=>{
+  if(drawing){const p=pt(e);seg(last,p);last=p}
+  else if(tool==='crop'&&cs){
+    const p=pt(e),x=Math.min(cs.x,p.x),y=Math.min(cs.y,p.y),w=Math.abs(p.x-cs.x),h=Math.abs(p.y-cs.y);
+    crect={x,y,w,h};const o=$('crp');o.hidden=false;
+    o.style.left=Math.min(cs.cx,p.cx)+'px';o.style.top=Math.min(cs.cy,p.cy)+'px';
+    o.style.width=Math.abs(p.cx-cs.cx)+'px';o.style.height=Math.abs(p.cy-cs.cy)+'px';
+  }
+};
+ecv.onpointerup=ecv.onpointercancel=()=>{endStroke();cs=null};
+$('capply').onclick=()=>{
+  if(!crect||crect.w<20||crect.h<20){toast('Drag on the page to choose an area first');return}
+  snap();const t=document.createElement('canvas');t.width=Math.round(crect.w);t.height=Math.round(crect.h);
+  t.getContext('2d').drawImage(ecv,crect.x,crect.y,crect.w,crect.h,0,0,t.width,t.height);
+  ecv.width=t.width;ecv.height=t.height;ex.drawImage(t,0,0);syncH();hideCrop();toast('Cropped');
+};
+/* PWA */
+if('serviceWorker' in navigator)addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
+let dp=null;addEventListener('beforeinstallprompt',e=>{e.preventDefault();dp=e;$('inst').hidden=false});
+$('inst').onclick=async()=>{if(!dp)return;dp.prompt();await dp.userChoice;dp=null;$('inst').hidden=true};
+addEventListener('appinstalled',()=>{$('inst').hidden=true;toast('Installed')});
+</script>
+</body>
+</html>
